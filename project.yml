@@ -1,0 +1,21 @@
+name: NativeZombies
+options:
+  bundleIdPrefix: com.nativezombies
+  deploymentTarget:
+    iOS: "17.0"
+targets:
+  NativeZombies:
+    type: application
+    platform: iOS
+    sources:
+      - NativeZombies
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.nativezombies.ios
+        PRODUCT_NAME: NativeZombies
+        SWIFT_VERSION: 5.0
+        GENERATE_INFOPLIST_FILE: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+    scheme:
+      testTargets: []
