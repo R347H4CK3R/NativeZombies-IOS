@@ -101,16 +101,18 @@ final class GameViewController: UIViewController, MTKViewDelegate {
         button.heightAnchor.constraint(equalToConstant: 46).isActive = true
     }
     private func showMenu() {
+        sound.pause()
         hud.clearInput(); game.paused = true; menu.isHidden = false
         heading.text = game.dead ? "OUTPOST OVERRUN" : (game.started ? "HOLD YOUR GROUND" : "THE LAST SHIFT")
         subtitle.text = game.dead ? "ROUND \(game.round)  /  \(game.kills) ELIMINATED  /  BEST \(highScore)" : "Survive the rounds. Buy your way deeper.\nTeal: weapons · Gold: doors & supply cache · Color: perks"
         startButton.setTitle(game.dead ? "TRY AGAIN" : (game.started ? "RESUME" : "ENTER OUTPOST"),for: .normal)
     }
     @objc private func resume() {
-        if game.dead { game = Game(); recordedDeath = false }
+        if game.dead { sound.stop(); game = Game(); recordedDeath = false }
         game.start(); hud.clearInput(); menu.isHidden = true; previousTime = CACurrentMediaTime()
+        sound.resume()
     }
-    @objc private func restart() { game = Game(); recordedDeath = false; resume() }
+    @objc private func restart() { sound.stop(); game = Game(); recordedDeath = false; resume() }
     @objc private func background() { if renderer != nil { showMenu() } }
     @objc private func controllerLost() { controllerButtons.removeAll(); showMenu() }
     @objc private func changeSensitivity(_ sender: UIButton) {
@@ -156,7 +158,7 @@ final class GameViewController: UIViewController, MTKViewDelegate {
         aiming = input.aim
         hud.advance(dt: dt)
         game.tick(dt,input: input)
-        sound.play(game.events)
+        if !game.paused && !game.dead { sound.play(game.events) }
         game.events.removeAll(keepingCapacity: true)
         if game.dead && !recordedDeath {
             recordedDeath = true; highScore = max(highScore,game.round)

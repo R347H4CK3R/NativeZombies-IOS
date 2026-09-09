@@ -1,9 +1,11 @@
 import AVFoundation
 
-/// Original synthesized effects. No external audio or game files are needed.
+/// Selected imported effects with synthesized weapon and interaction cues.
 final class GameAudio {
-    var enabled = true
+    var enabled = true { didSet { if !enabled { stop() } } }
     private var voices: [String:[AVAudioPlayer]] = [:]
+    private var ambience: AVAudioPlayer?
+    private var pausedPlayers: [AVAudioPlayer] = []
     init() {
         try? AVAudioSession.sharedInstance().setCategory(.ambient,mode: .default)
         for (name,hz,duration,noise) in [("shot",90.0,0.10,0.8),("hit",700.0,0.045,0.2),("hurt",65.0,0.22,0.4),
@@ -14,6 +16,31 @@ final class GameAudio {
                 p.volume = name == "shot" ? 0.3 : 0.2; p.prepareToPlay(); return p
             }
         }
+        for name in ["round","door","buy","cache"] {
+            if let url = Bundle.main.url(forResource: name, withExtension: "mp3", subdirectory: "Imported") {
+                let pool = (0..<(name == "round" || name == "cache" ? 1 : 3)).compactMap { _ -> AVAudioPlayer? in
+                    guard let player = try? AVAudioPlayer(contentsOf: url) else { return nil }
+                    player.volume = 0.35; player.prepareToPlay(); return player
+                }
+                if !pool.isEmpty { voices[name] = pool }
+            }
+        }
+        if let url = Bundle.main.url(forResource: "wind", withExtension: "mp3", subdirectory: "Imported") {
+            ambience = try? AVAudioPlayer(contentsOf: url)
+            ambience?.numberOfLoops = -1; ambience?.volume = 0.13; ambience?.prepareToPlay()
+        }
+    }
+    func pause() {
+        pausedPlayers += voices.values.flatMap { $0 }.filter { $0.isPlaying }
+        pausedPlayers.forEach { $0.pause() }; ambience?.pause()
+    }
+    func resume() {
+        guard enabled else { return }
+        ambience?.play(); pausedPlayers.forEach { $0.play() }; pausedPlayers.removeAll()
+    }
+    func stop() {
+        for player in voices.values.flatMap({ $0 }) { player.stop(); player.currentTime = 0 }
+        ambience?.stop(); ambience?.currentTime = 0; pausedPlayers.removeAll()
     }
     func play(_ events: [GameEvent]) {
         guard enabled else { return }
@@ -28,6 +55,11 @@ final class GameAudio {
             case .repair: key = "repair"
             case .reload: key = "reload"
             case .round: key = "round"
+            case .door: key = "door"
+            case .cacheStart: key = "cache"
+            case .cacheReady:
+                voices["cache"]?.forEach { $0.stop(); $0.currentTime = 0 }
+                continue
             }
             if !played.insert(key).inserted { continue }
             guard let pool = voices[key], let player = pool.first(where: { !$0.isPlaying }) ?? pool.first else { continue }

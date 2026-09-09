@@ -4,6 +4,7 @@ import simd
 struct WorldVertex {
     var position: SIMD4<Float>
     var color: SIMD4<Float>
+    var materialUV: SIMD4<Float>
 }
 struct CameraUniform {
     var eye: SIMD4<Float>
@@ -19,6 +20,7 @@ final class WorldRenderer {
     private let queue: MTLCommandQueue
     private let pipeline: MTLRenderPipelineState
     private let depth: MTLDepthStencilState
+    private let materials: MTLTexture
     private var staticBuffer: MTLBuffer?
     private var staticCount = 0
     private var doorState = ""
@@ -41,17 +43,43 @@ final class WorldRenderer {
             throw NSError(domain: "Afterlight", code: 2, userInfo: [NSLocalizedDescriptionKey: "Could not create depth state."])
         }
         self.depth = depth
+        materials = try Self.loadMaterials(device: device, queue: queue)
         vertices.reserveCapacity(20000)
     }
-    private func box(_ center: SIMD3<Float>, _ size: SIMD3<Float>, _ color: SIMD3<Float>) {
+    private static func loadMaterials(device: MTLDevice, queue: MTLCommandQueue) throws -> MTLTexture {
+        let names = ["floor", "wall", "wood", "health-front"]
+        let desc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: 512, height: 512, mipmapped: true)
+        desc.textureType = .type2DArray; desc.arrayLength = names.count+1
+        desc.storageMode = .shared; desc.usage = .shaderRead
+        guard let atlas = device.makeTexture(descriptor: desc), let command = queue.makeCommandBuffer(), let blit = command.makeBlitCommandEncoder() else {
+            throw NSError(domain: "Afterlight", code: 3)
+        }
+        let white = [UInt8](repeating: 255, count: 512*512*4)
+        white.withUnsafeBytes { atlas.replace(region: MTLRegionMake2D(0,0,512,512), mipmapLevel: 0, slice: 0, withBytes: $0.baseAddress!, bytesPerRow: 512*4, bytesPerImage: 512*512*4) }
+        let loader = MTKTextureLoader(device: device)
+        for (index,name) in names.enumerated() {
+            guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "Imported") else {
+                throw NSError(domain: "Afterlight", code: 4, userInfo: [NSLocalizedDescriptionKey: "Missing material: \(name)"])
+            }
+            let source = try loader.newTexture(URL: url, options: [.SRGB: false, .origin: MTKTextureLoader.Origin.topLeft])
+            guard source.width == 512 && source.height == 512 && source.pixelFormat == .rgba8Unorm else { throw NSError(domain: "Afterlight", code: 5) }
+            blit.copy(from: source, sourceSlice: 0, sourceLevel: 0, sourceOrigin: MTLOrigin(x:0,y:0,z:0), sourceSize: MTLSize(width:512,height:512,depth:1), to: atlas, destinationSlice: index+1, destinationLevel: 0, destinationOrigin: MTLOrigin(x:0,y:0,z:0))
+        }
+        blit.generateMipmaps(for: atlas); blit.endEncoding(); command.commit(); command.waitUntilCompleted()
+        if let error = command.error { throw error }
+        return atlas
+    }
+    private func box(_ center: SIMD3<Float>, _ size: SIMD3<Float>, _ color: SIMD3<Float>, material: Float = 0, frontOnly: Bool = false) {
         let lo = center-size/2, hi = center+size/2
         let p = [SIMD3(lo.x,lo.y,lo.z), SIMD3(hi.x,lo.y,lo.z), SIMD3(hi.x,hi.y,lo.z), SIMD3(lo.x,hi.y,lo.z),
                  SIMD3(lo.x,lo.y,hi.z), SIMD3(hi.x,lo.y,hi.z), SIMD3(hi.x,hi.y,hi.z), SIMD3(lo.x,hi.y,hi.z)]
         let faces = [[0,1,2,3],[5,4,7,6],[4,0,3,7],[1,5,6,2],[3,2,6,7],[4,5,1,0]]
         let shades: [Float] = [0.72,0.8,0.62,0.86,1,0.45]
+        let uv: [SIMD2<Float>] = [SIMD2(0,1),SIMD2(1,1),SIMD2(1,0),SIMD2(0,0)]
         for f in 0..<6 {
             let c = color*shades[f]
-            for i in indices { vertices.append(WorldVertex(position: SIMD4(p[faces[f][i]],1), color: SIMD4(c,1))) }
+            let layer = frontOnly && f > 1 ? 0 : material
+            for i in indices { vertices.append(WorldVertex(position: SIMD4(p[faces[f][i]],1), color: SIMD4(c,1), materialUV: SIMD4(uv[i].x,uv[i].y,layer,0))) }
         }
     }
     private func rebuildWorld(_ game: Game) {
@@ -60,12 +88,12 @@ final class WorldRenderer {
             for x in 0..<Game.width {
                 let px = Float(x)+0.5, pz = Float(z)+0.5
                 let alternate: Float = (x+z)%2 == 0 ? 1 : 0.84
-                let floor: SIMD3<Float> = x < 9 ? SIMD3(0.19,0.22,0.23) : (z < 8 ? SIMD3(0.22,0.23,0.18) : SIMD3(0.19,0.2,0.26))
-                box(SIMD3(px,-0.08,pz), SIMD3(1,0.12,1), floor*alternate)
+                let floor: SIMD3<Float> = x < 9 ? SIMD3(0.65,0.72,0.74) : (z < 8 ? SIMD3(0.74,0.73,0.64) : SIMD3(0.67,0.69,0.8))
+                box(SIMD3(px,-0.08,pz), SIMD3(1,0.12,1), floor*alternate, material: 1)
                 if game.isWall(x,z) {
                     let isDoor = game.doors.contains { $0.x == x && $0.z == z }
-                    let color: SIMD3<Float> = isDoor ? SIMD3(0.58,0.3,0.09) : SIMD3(0.26,0.32,0.34)
-                    box(SIMD3(px,1.5,pz), SIMD3(1,3,1), color)
+                    let color: SIMD3<Float> = isDoor ? SIMD3(0.8,0.64,0.42) : SIMD3(0.7,0.77,0.8)
+                    box(SIMD3(px,1.5,pz), SIMD3(1,3,1), color, material: isDoor ? 3 : 2)
                     box(SIMD3(px,0.16,pz), SIMD3(1.015,0.12,1.015), SIMD3(0.11,0.14,0.15))
                     if isDoor {
                         for h in [Float(0.55),1.4,2.25] { box(SIMD3(px,h,pz), SIMD3(1.03,0.12,1.03), SIMD3(0.85,0.63,0.14)) }
@@ -81,12 +109,16 @@ final class WorldRenderer {
                 box(SIMD3(p.x,1.16,p.z), SIMD3(0.9,0.07,0.45), SIMD3(0.2,0.95,0.88))
                 box(SIMD3(p.x,0.84,p.z-0.2), SIMD3(0.6,0.12,0.12), SIMD3(0.72,0.93,0.89))
             case .box:
-                box(SIMD3(p.x,0.35,p.z), SIMD3(1.2,0.7,0.7), SIMD3(0.35,0.22,0.08))
+                box(SIMD3(p.x,0.35,p.z), SIMD3(1.2,0.7,0.7), SIMD3(0.7,0.55,0.35), material: 3)
                 box(SIMD3(p.x,0.75,p.z), SIMD3(1.24,0.12,0.74), SIMD3(0.92,0.68,0.18))
             case .perk(let perk):
                 let colors: [SIMD3<Float>] = [SIMD3(0.85,0.2,0.25),SIMD3(0.22,0.82,0.4),SIMD3(0.35,0.5,1)]
-                box(SIMD3(p.x,0.8,p.z), SIMD3(0.65,1.6,0.65), colors[perk.rawValue]*0.65)
-                box(SIMD3(p.x,1.35,p.z), SIMD3(0.69,0.3,0.69), colors[perk.rawValue])
+                if perk == .ironHeart {
+                    box(SIMD3(p.x,0.8,p.z), SIMD3(0.65,1.6,0.65), SIMD3(0.9,0.9,0.9), material: 4, frontOnly: true)
+                } else {
+                    box(SIMD3(p.x,0.8,p.z), SIMD3(0.65,1.6,0.65), colors[perk.rawValue]*0.65)
+                    box(SIMD3(p.x,1.35,p.z), SIMD3(0.69,0.3,0.69), colors[perk.rawValue])
+                }
             }
         }
         for gate in game.barricades {
@@ -109,11 +141,12 @@ final class WorldRenderer {
                                    params: SIMD4(Float(view.drawableSize.width/max(1,view.drawableSize.height)), aiming ? 1.95 : 1.15,game.elapsed,0))
         encoder.setRenderPipelineState(pipeline); encoder.setDepthStencilState(depth); encoder.setCullMode(.none)
         encoder.setVertexBytes(&camera,length: MemoryLayout<CameraUniform>.stride,index: 1)
+        encoder.setFragmentTexture(materials,index: 0)
         encoder.setVertexBuffer(staticBuffer,offset: 0,index: 0)
         encoder.drawPrimitives(type: .triangle,vertexStart: 0,vertexCount: staticCount)
         vertices.removeAll(keepingCapacity: true)
         for gate in game.barricades {
-            for n in 0..<gate.boards { box(SIMD3(gate.position.x,0.3+Float(n)*0.33,gate.position.z),SIMD3(1.15,0.18,0.12),SIMD3(0.48,0.32,0.17)) }
+            for n in 0..<gate.boards { box(SIMD3(gate.position.x,0.3+Float(n)*0.33,gate.position.z),SIMD3(1.15,0.18,0.12),SIMD3(0.8,0.65,0.45),material: 3) }
         }
         for zombie in game.zombies {
             let p = zombie.position

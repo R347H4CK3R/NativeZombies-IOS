@@ -1,0 +1,137 @@
+{
+  "scope": "Selected textures and sound effects from the supplied PS3 Zombies files. Outpost layout, collision, characters and weapons remain native prototype geometry. Town map geometry is not imported.",
+  "assets": [
+    {
+      "file": "floor.png",
+      "kind": "texture",
+      "sourceBank": "zm_transit.ipak",
+      "sourceKey": "04dac7a66663a48d",
+      "sourceSHA256": "2bd3644cb41169cd99b25658cfdcf0b4cb6a7717ba9ced1c8e44dece34c1e5d1",
+      "conversion": "BC3 512x512 to opaque RGB PNG",
+      "crop": null,
+      "width": 512,
+      "height": 512,
+      "bytes": 341101,
+      "sha256": "a52079e06bd360b4a63a9a418244d367f0eb0a4ddda074b6d287145cf44e678c"
+    },
+    {
+      "file": "wall.png",
+      "kind": "texture",
+      "sourceBank": "zm_transit.ipak",
+      "sourceKey": "02aeb563717d381d",
+      "sourceSHA256": "965f8c0bded1ba2a44bf39ded3a5f984dd082404e3f3660a67827ba856271011",
+      "conversion": "BC3 512x512 to opaque RGB PNG",
+      "crop": null,
+      "width": 512,
+      "height": 512,
+      "bytes": 494404,
+      "sha256": "dada23b4a733c8ca96b1a5a8cc91f64755ee66022c236054bbf14d6b33f7e26a"
+    },
+    {
+      "file": "wood.png",
+      "kind": "texture",
+      "sourceBank": "zm_transit.ipak",
+      "sourceKey": "026d88606fc3142a",
+      "sourceSHA256": "d212b29a7216a6b2d82a872e6c043afdf09c1978dbf350da3961320843a0e9a4",
+      "conversion": "BC3 512x512 to opaque RGB PNG",
+      "crop": [
+        0,
+        0,
+        512,
+        385
+      ],
+      "width": 512,
+      "height": 512,
+      "bytes": 463686,
+      "sha256": "dab8004489f0f99cf2db6c1e5dc66418277c192ed48a7759d0ec6de4ed8c7b7b"
+    },
+    {
+      "file": "health-front.png",
+      "kind": "texture",
+      "sourceBank": "zm_transit.ipak",
+      "sourceKey": "056d425b6f2318e6",
+      "sourceSHA256": "3fc84b6dc766f9e6f385ca4d269d9459a45419ce90c65c04a32ffa17062bce0b",
+      "conversion": "BC3 512x512 to opaque RGB PNG",
+      "crop": [
+        270,
+        115,
+        420,
+        502
+      ],
+      "width": 512,
+      "height": 512,
+      "bytes": 292453,
+      "sha256": "d6936542a5fb10dffd362a89f65b5ecd7fe61006625fd95ad67a84f17a6c77a0"
+    },
+    {
+      "file": "round.mp3",
+      "kind": "audio",
+      "sourceBank": "zmb_common.all.sabs",
+      "sourceKey": "88af5d9a",
+      "sourceName": "raw\\sound\\mus\\zombie\\zombie_global\\mus_zombie_round_start.SN65.ps3.snd",
+      "sourceSHA256": "02392b2a41823d2b445eeb849a3b8e11d08606027991d6d7aa0bbc8c0e7cd2d4",
+      "conversion": "Unmodified MP3 payload",
+      "seconds": 14.016,
+      "channels": 2,
+      "rate": 48000,
+      "bytes": 300192,
+      "sha256": "02392b2a41823d2b445eeb849a3b8e11d08606027991d6d7aa0bbc8c0e7cd2d4"
+    },
+    {
+      "file": "door.mp3",
+      "kind": "audio",
+      "sourceBank": "zmb_common.all.sabs",
+      "sourceKey": "984c61a7",
+      "sourceName": "raw\\sound\\zmb\\door\\wood_sml\\sngl_wood_door_02.SN55.ps3.snd",
+      "sourceSHA256": "366b05cc70c00b8506193c6733c9afb91312a9622f9f3ea59f1e2d9cd7bf9a5e",
+      "conversion": "Unmodified MP3 payload",
+      "seconds": 1.279,
+      "channels": 2,
+      "rate": 48000,
+      "bytes": 27888,
+      "sha256": "366b05cc70c00b8506193c6733c9afb91312a9622f9f3ea59f1e2d9cd7bf9a5e"
+    },
+    {
+      "file": "buy.mp3",
+      "kind": "audio",
+      "sourceBank": "zmb_code_post_gfx.all.sabs",
+      "sourceKey": "767b5cc0",
+      "sourceName": "raw\\sound\\uin\\navigation\\ui_equip.SN65.ps3.snd",
+      "sourceSHA256": "e3b91905048b93b06ad4a483c585b6f6f6295e5d23535723e0da7c0324aa07e2",
+      "conversion": "Unmodified MP3 payload",
+      "seconds": 0.329,
+      "channels": 1,
+      "rate": 48000,
+      "bytes": 4248,
+      "sha256": "e3b91905048b93b06ad4a483c585b6f6f6295e5d23535723e0da7c0324aa07e2"
+    },
+    {
+      "file": "cache.mp3",
+      "kind": "audio",
+      "sourceBank": "zmb_common.all.sabs",
+      "sourceKey": "9e933636",
+      "sourceName": "raw\\sound\\evt\\zombie_global\\box\\spin\\zmb_box_spin.SN55.ps3.snd",
+      "sourceSHA256": "6e14cfa99b55f51e8b8629d51e4c67aa15b4076c701e4113d50d141814ae0e2f",
+      "conversion": "Unmodified MP3 payload",
+      "seconds": 8.4,
+      "channels": 2,
+      "rate": 48000,
+      "bytes": 194064,
+      "sha256": "6e14cfa99b55f51e8b8629d51e4c67aa15b4076c701e4113d50d141814ae0e2f"
+    },
+    {
+      "file": "wind.mp3",
+      "kind": "audio",
+      "sourceBank": "zmb_common.all.sabs",
+      "sourceKey": "4476a5eb",
+      "sourceName": "raw\\sound\\zmb\\level\\zm_transit\\amb\\amb_depot_wind_l.SL55.ps3.snd",
+      "sourceSHA256": "f29abe81a85b2024783aee22f067c7ea4c2962094a072c44da647af421c6c957",
+      "conversion": "Unmodified MP3 payload",
+      "seconds": 30.362,
+      "channels": 1,
+      "rate": 48000,
+      "bytes": 372768,
+      "sha256": "f29abe81a85b2024783aee22f067c7ea4c2962094a072c44da647af421c6c957"
+    }
+  ]
+}

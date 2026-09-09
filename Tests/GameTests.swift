@@ -25,6 +25,7 @@ final class GameTests: XCTestCase {
         XCTAssertEqual(g.nearestInteraction(),.door(0)); XCTAssertTrue(g.isWall(9,4))
         g.interact()
         XCTAssertEqual(g.points,0); XCTAssertFalse(g.isWall(9,4)); XCTAssertTrue(g.reachable(V2(17.5,2.5)))
+        XCTAssertTrue(g.events.contains { if case .door = $0 { return true }; return false })
         XCTAssertFalse(g.reachable(V2(17.5,13.5)))
     }
     func testCannotPurchaseThroughWallOrWithoutPoints() {
@@ -58,9 +59,11 @@ final class GameTests: XCTestCase {
     func testBoxChargesOnceThenOffersTimedClaim() {
         let g = live(); g.player = V2(12.5,4.5); g.points = 2000
         g.interact(); XCTAssertEqual(g.points,1050); XCTAssertEqual(g.boxTimer,3)
+        XCTAssertTrue(g.events.contains { if case .cacheStart = $0 { return true }; return false })
         g.interact(); XCTAssertEqual(g.points,1050)
         for _ in 0..<62 { g.tick(0.05,input: Input()) }
         XCTAssertNotNil(g.boxReward)
+        XCTAssertTrue(g.events.contains { if case .cacheReady = $0 { return true }; return false })
         let reward = g.boxReward!; g.interact()
         XCTAssertEqual(g.weapon.id,reward); XCTAssertNil(g.boxReward); XCTAssertEqual(g.points,1050)
     }

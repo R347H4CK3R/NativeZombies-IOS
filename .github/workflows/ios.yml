@@ -27,10 +27,14 @@ jobs:
           command -v xcodegen || brew install xcodegen
       - name: Test survival simulation
         run: swift test
+      - name: Verify imported textures and decode audio
+        run: python3 scripts/verify-assets.py
       - name: Generate Xcode project
         run: xcodegen generate
       - name: Build ARM64 unsigned IPA
         run: bash scripts/build-unsigned.sh
+      - name: Verify packaged assets
+        run: python3 scripts/verify-assets.py build/unsigned/Payload/NativeZombies.app/Imported
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
         with:

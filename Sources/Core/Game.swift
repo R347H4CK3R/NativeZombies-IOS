@@ -60,7 +60,7 @@ struct Input {
     var aim = false
     var sprint = false
 }
-enum GameEvent { case shot, hit, kill, hurt, purchase, repair, reload, round }
+enum GameEvent { case shot, hit, kill, hurt, purchase, repair, reload, round, door, cacheStart, cacheReady }
 
 /// Platform-independent simulation. All mutations happen on the presentation thread.
 final class Game {
@@ -222,7 +222,7 @@ final class Game {
         if pathTimer <= 0 { rebuildPaths(); pathTimer = 0.35 }
         if boxTimer > 0 {
             boxTimer = max(0, boxTimer-dt)
-            if boxTimer == 0 { boxReward = 1 + Int(random()*4); boxClaimTimer = 12; notify("CACHE READY — RETURN TO CLAIM") }
+            if boxTimer == 0 { boxReward = 1 + Int(random()*4); boxClaimTimer = 12; events.append(.cacheReady); notify("CACHE READY — RETURN TO CLAIM") }
         } else if boxClaimTimer > 0 {
             boxClaimTimer = max(0, boxClaimTimer-dt)
             if boxClaimTimer == 0 { boxReward = nil }
@@ -348,7 +348,7 @@ final class Game {
         guard !paused && !dead, let item = nearestInteraction() else { return }
         switch item {
         case .door(let i):
-            if spend(doors[i].cost) { doors[i].open = true; rebuildPaths(); notify("AREA UNLOCKED") }
+            if spend(doors[i].cost) { doors[i].open = true; events.append(.door); rebuildPaths(); notify("AREA UNLOCKED") }
         case .barricade(let i):
             if repairTimer == 0 && barricades[i].boards < 5 {
                 barricades[i].boards += 1; repairTimer = 0.5; events.append(.repair)
@@ -364,7 +364,7 @@ final class Game {
             case .box:
                 if boxTimer > 0 { return }
                 if let reward = boxReward { equip(reward); boxReward = nil; boxClaimTimer = 0; notify("\(weapon.spec.name) EQUIPPED") }
-                else if spend(950) { boxTimer = 3; notify("SUPPLY CACHE ROLLING…") }
+                else if spend(950) { boxTimer = 3; events.append(.cacheStart); notify("SUPPLY CACHE ROLLING…") }
             case .perk(let perk):
                 if !perks.contains(perk) && spend(perk.cost) { perks.insert(perk); if perk == .ironHeart { health = maxHealth }; notify("\(perk.name) ACTIVE") }
             }

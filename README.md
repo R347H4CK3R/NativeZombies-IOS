@@ -1,6 +1,6 @@
 # Afterlight: Outpost — NativeZombies iOS
 
-An original, offline, first-person round-survival prototype for ARM64 iPhone and iPad. Built with Swift, UIKit, Metal, and GameController. No emulator, JIT, PS3 executable, BO2 asset, or third-party game engine is used.
+An offline, first-person round-survival prototype for ARM64 iPhone and iPad. Built with Swift, UIKit, Metal, and GameController. Version 0.2 adds selected textures and sound effects converted from the supplied PS3 Zombies files. The native simulation runs without an emulator, JIT, or PS3 executable.
 
 ## Playable scope
 
@@ -12,14 +12,14 @@ An original, offline, first-person round-survival prototype for ARM64 iPhone and
 - Iron Heart (health), Quick Hands (reload speed), and Fleet Foot (movement speed) perks.
 - Barricades that enemies break and the player can repair. Repair rewards are capped per barricade per round.
 - Grid pathfinding through open doors, wall collision, melee cooldowns, regeneration, death, restart, and a saved best round.
-- Landscape multitouch controls, compatible extended game controllers, synthesized sound, hit markers, HUD, pause menu, and automatic pause on background/controller disconnect.
+- Landscape multitouch controls, compatible extended game controllers, imported ambient/interaction sounds plus synthesized weapon effects, hit markers, HUD, pause menu, and automatic pause on background/controller disconnect.
 
-This is a gameplay prototype, not a recreation of BO2's maps, graphics, campaign, networking, or complete Zombies feature set. Geometry and audio are generated in code. There is no co-op, persistent run save, asset import pipeline, advanced animation, or device performance certification yet. iOS 17 is the minimum deployment target; iPhone 16 Plus and iOS 27 beta require physical-device testing.
+This is a gameplay prototype, not a recreation of BO2's maps, graphics, campaign, networking, or complete Zombies feature set. The Outpost layout, collision, characters, and weapon geometry are generated in code. The original Town map has NOT been imported: its fastfile geometry remains unverified. Four texture images and five MP3 effects are bundled, with source keys, conversion details, and SHA-256 hashes in `Resources/Imported/manifest.json`. There is no co-op, persistent run save, advanced animation, or device performance certification yet. iOS 17 is the minimum deployment target; iPhone 16 Plus and iOS 27 beta require physical-device testing.
 
 ## Build an IPA without a local Mac
 
 1. Open this repository's **Actions → Build iOS IPA**. Pushes to `main` also run the workflow.
-2. Wait for simulation tests and the ARM64 device build to pass.
+2. Wait for simulation tests, imported-asset decoding checks, the ARM64 build, and the iPhone 16 Plus simulator smoke test to pass.
 3. Download the **Afterlight-unsigned-N** artifact and unzip it to get `Afterlight-unsigned.ipa`.
 4. Sign the IPA using your chosen iOS signing workflow before installing it. An unsigned IPA cannot be installed directly.
 
@@ -54,7 +54,7 @@ Look sensitivity and sound can be changed in the pause menu. Teal stations sell 
 ## Structure and validation
 
 - `Sources/Core/Game.swift`: platform-independent simulation.
-- `Sources/Platform`: app lifecycle, input/HUD, Metal geometry/shaders, synthesized audio.
+- `Sources/Platform`: app lifecycle, input/HUD, textured Metal geometry/shaders, and imported/synthesized audio.
 - `Tests`: gameplay regression tests run with `swift test`.
 - `project.yml`: XcodeGen project definition.
 - `scripts`: unsigned device packaging and optional ad hoc export.
