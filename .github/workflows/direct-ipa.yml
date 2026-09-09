@@ -1,0 +1,27 @@
+name: Direct IPA download
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/direct-ipa.yml']
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download verified build and publish IPA file
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ipa"
+          gh run download 34308490073 --name Afterlight-unsigned-2 --dir "$RUNNER_TEMP/ipa"
+          test -s "$RUNNER_TEMP/ipa/Afterlight-unsigned.ipa"
+          if ! gh release view v0.1.0-prototype >/dev/null 2>&1; then
+            gh release create v0.1.0-prototype --target 7c45bd190f31f1765d3f389fe5d8c104e338e71a --prerelease --title "Afterlight 0.1.0 prototype" --notes "Native ARM64 iOS survival prototype. Simulation and simulator smoke tests passed. Import the unsigned IPA into a configured LiveContainer or sign before installing. Physical-device compatibility remains unverified."
+          fi
+          gh release upload v0.1.0-prototype "$RUNNER_TEMP/ipa/Afterlight-unsigned.ipa" --clobber
