@@ -28,6 +28,17 @@ final class HUDView: UIView {
          ("RUN",CGRect(x: left+48,y: bottom-169,width: 58,height: 36)),
          ("PAUSE",CGRect(x: right-42,y: 64,width: 42,height: 30))]
     }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        isAccessibilityElement = false
+        accessibilityElements = controls.map { name,frame in
+            let element = UIAccessibilityElement(accessibilityContainer: self)
+            element.accessibilityLabel = name
+            element.accessibilityTraits = .button
+            element.accessibilityFrameInContainerSpace = frame
+            return element
+        }
+    }
     private func held(_ name: String) -> Bool {
         fingers.values.contains { if case .button(let n) = $0.role { return n == name }; return false }
     }

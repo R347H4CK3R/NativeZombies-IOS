@@ -37,6 +37,17 @@ jobs:
           name: Afterlight-unsigned-${{ github.run_number }}
           path: build/Afterlight-unsigned.ipa
           if-no-files-found: error
+      - name: Simulator launch and controls smoke test
+        run: bash scripts/test-ui.sh
+      - name: Upload simulator screenshots and test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Afterlight-UI-smoke-${{ github.run_number }}
+          path: |
+            build/screenshots/
+            build/UITests.xcresult/
+          if-no-files-found: warn
       - name: Build signed ad hoc IPA
         if: github.event_name == 'workflow_dispatch' && inputs.signed
         env:

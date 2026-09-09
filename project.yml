@@ -27,6 +27,17 @@ targets:
       - sdk: MetalKit.framework
       - sdk: GameController.framework
       - sdk: AVFoundation.framework
+  NativeZombiesUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - UITests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.r347h4ck3r.nativezombies.uitests
+    dependencies:
+      - target: NativeZombies
 schemes:
   NativeZombies:
     build:
@@ -34,5 +45,8 @@ schemes:
         NativeZombies: all
     run:
       config: Debug
+    test:
+      targets:
+        - NativeZombiesUITests
     archive:
       config: Release
