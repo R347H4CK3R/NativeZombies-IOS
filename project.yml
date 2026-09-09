@@ -1,0 +1,38 @@
+name: NativeZombies
+options:
+  bundleIdPrefix: com.r347h4ck3r
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    SUPPORTS_MACCATALYST: NO
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+targets:
+  NativeZombies:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.r347h4ck3r.nativezombies
+        INFOPLIST_FILE: Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        CODE_SIGN_STYLE: Automatic
+    dependencies:
+      - sdk: MetalKit.framework
+      - sdk: GameController.framework
+      - sdk: AVFoundation.framework
+schemes:
+  NativeZombies:
+    build:
+      targets:
+        NativeZombies: all
+    run:
+      config: Debug
+    archive:
+      config: Release

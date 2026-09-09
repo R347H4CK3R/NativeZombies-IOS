@@ -1,0 +1,57 @@
+name: Build iOS IPA
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      signed:
+        description: 'Build an ad hoc signed IPA (requires signing secrets)'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+          command -v xcodegen || brew install xcodegen
+      - name: Test survival simulation
+        run: swift test
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Build ARM64 unsigned IPA
+        run: bash scripts/build-unsigned.sh
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Afterlight-unsigned-${{ github.run_number }}
+          path: build/Afterlight-unsigned.ipa
+          if-no-files-found: error
+      - name: Build signed ad hoc IPA
+        if: github.event_name == 'workflow_dispatch' && inputs.signed
+        env:
+          CERTIFICATE_P12_BASE64: ${{ secrets.CERTIFICATE_P12_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+          PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
+        run: bash scripts/build-signed.sh
+      - name: Upload signed IPA
+        if: github.event_name == 'workflow_dispatch' && inputs.signed
+        uses: actions/upload-artifact@v4
+        with:
+          name: Afterlight-signed-${{ github.run_number }}
+          path: build/signed/*.ipa
+          if-no-files-found: error
+      - name: Build summary
+        if: always()
+        run: |
+          echo 'Unsigned IPAs require signing before installation. Signed builds require an Apple Distribution certificate and an ad hoc profile including your device.' >> "$GITHUB_STEP_SUMMARY"
