@@ -1,4 +1,5 @@
 import MetalKit
+import UIKit
 import simd
 
 struct WorldVertex {
@@ -51,20 +52,30 @@ final class WorldRenderer {
         let desc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: 512, height: 512, mipmapped: true)
         desc.textureType = .type2DArray; desc.arrayLength = names.count+1
         desc.storageMode = .shared; desc.usage = .shaderRead
-        guard let atlas = device.makeTexture(descriptor: desc), let command = queue.makeCommandBuffer(), let blit = command.makeBlitCommandEncoder() else {
+        guard let atlas = device.makeTexture(descriptor: desc) else {
             throw NSError(domain: "Afterlight", code: 3)
         }
         let white = [UInt8](repeating: 255, count: 512*512*4)
         white.withUnsafeBytes { atlas.replace(region: MTLRegionMake2D(0,0,512,512), mipmapLevel: 0, slice: 0, withBytes: $0.baseAddress!, bytesPerRow: 512*4, bytesPerImage: 512*512*4) }
-        let loader = MTKTextureLoader(device: device)
         for (index,name) in names.enumerated() {
-            guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "Imported") else {
+            guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "Imported"),
+                  let image = UIImage(contentsOfFile: url.path)?.cgImage else {
                 throw NSError(domain: "Afterlight", code: 4, userInfo: [NSLocalizedDescriptionKey: "Missing material: \(name)"])
             }
-            let source = try loader.newTexture(URL: url, options: [.SRGB: false, .origin: MTKTextureLoader.Origin.topLeft])
-            guard source.width == 512 && source.height == 512 && source.pixelFormat == .rgba8Unorm else { throw NSError(domain: "Afterlight", code: 5) }
-            blit.copy(from: source, sourceSlice: 0, sourceLevel: 0, sourceOrigin: MTLOrigin(x:0,y:0,z:0), sourceSize: MTLSize(width:512,height:512,depth:1), to: atlas, destinationSlice: index+1, destinationLevel: 0, destinationOrigin: MTLOrigin(x:0,y:0,z:0))
+            guard image.width == 512 && image.height == 512 else { throw NSError(domain: "Afterlight", code: 5) }
+            var pixels = [UInt8](repeating: 255,count: 512*512*4)
+            let decoded = pixels.withUnsafeMutableBytes { bytes -> Bool in
+                let flags = CGBitmapInfo.byteOrder32Big.rawValue | CGImageAlphaInfo.premultipliedLast.rawValue
+                guard let context = CGContext(data: bytes.baseAddress, width: 512, height: 512, bitsPerComponent: 8,
+                                              bytesPerRow: 512*4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: flags) else { return false }
+                context.draw(image,in: CGRect(x: 0,y: 0,width: 512,height: 512))
+                return true
+            }
+            guard decoded else { throw NSError(domain: "Afterlight", code: 6) }
+            pixels.withUnsafeBytes { atlas.replace(region: MTLRegionMake2D(0,0,512,512), mipmapLevel: 0, slice: index+1, withBytes: $0.baseAddress!, bytesPerRow: 512*4, bytesPerImage: 512*512*4) }
         }
+        // All fallible decoding is finished before opening an encoder.
+        guard let command = queue.makeCommandBuffer(), let blit = command.makeBlitCommandEncoder() else { throw NSError(domain: "Afterlight", code: 7) }
         blit.generateMipmaps(for: atlas); blit.endEncoding(); command.commit(); command.waitUntilCompleted()
         if let error = command.error { throw error }
         return atlas
