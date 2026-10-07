@@ -1,0 +1,44 @@
+name: COD4iOS bundled base
+
+on:
+  push:
+    branches:
+      - cod4ios-bundled-build
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          cmake --version
+          python3 --version
+
+      - name: Configure iOS project
+        run: |
+          bash tools/configure-ios.sh
+
+      - name: Build unsigned combined app
+        run: |
+          xcodebuild -project build/ios/xcode-engine/KisakCOD.xcodeproj             -target KisakCOD-Combined             -configuration Release             -sdk iphoneos             -jobs 2             CODE_SIGNING_ALLOWED=NO             CODE_SIGNING_REQUIRED=NO             build
+
+      - name: Package unsigned base IPA
+        run: |
+          python3 tools/package-public-playtest.py             --app build/ios/xcode-engine/ports/ios/Release-iphoneos/KisakCOD.app             --source-root "$PWD"             --output release/public
+          cp release/public/COD4iOS-playtest-unsigned.ipa COD4iOS-BundleBase.ipa
+          shasum -a 256 COD4iOS-BundleBase.ipa
+
+      - name: Commit base IPA to this build branch
+        run: |
+          git config user.name "R347H4CK3R"
+          git config user.email "canickel1997@gmail.com"
+          git add -f COD4iOS-BundleBase.ipa
+          git commit -m "CI: bundled base IPA [skip ci]"
+          git push origin HEAD:cod4ios-bundled-build
